@@ -10,10 +10,12 @@ import { clearCommand } from './commands/clear';
 import { statsCommand } from './commands/stats';
 import { launchInteractive } from './interactive';
 
-const ASCII_HEADER = figlet.textSync('Todo CLI', {
-  font: 'Small',
-  horizontalLayout: 'default',
-});
+let ASCII_HEADER = '';
+try {
+  ASCII_HEADER = figlet.textSync('Todo CLI', { font: 'Small', horizontalLayout: 'default' });
+} catch {
+  ASCII_HEADER = 'Todo CLI';
+}
 
 function printHeader(): void {
   console.log(chalk.cyan(ASCII_HEADER));
@@ -87,5 +89,9 @@ if (process.argv.length <= 2) {
   printHeader();
   launchInteractive().catch(console.error);
 } else {
-  program.parse(process.argv);
+  program.parseAsync(process.argv).catch((err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(chalk.red(`\n❌ Erreur: ${msg}\n`));
+    process.exit(1);
+  });
 }
