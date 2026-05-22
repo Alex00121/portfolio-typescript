@@ -24,11 +24,17 @@ export function addCommand(title: string, options: AddOptions): void {
     process.exit(1);
   }
 
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) {
+    console.error(chalk.red('Le titre ne peut pas être vide.'));
+    process.exit(1);
+  }
+
   const todos = loadTodos();
 
   const todo: Todo = {
     id: uuidv4(),
-    title: title.trim(),
+    title: trimmedTitle,
     done: false,
     priority,
     dueDate: options.due || null,
