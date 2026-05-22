@@ -41,13 +41,40 @@ export abstract class BaseValidator<T, TOut = T> {
     return this;
   }
 
-  validate(value: unknown, ctx: ValidatorContext = { field: 'root', path: [] }): ValidationResult {
-    const errors: { field: string; messages: string[] }[] = [];
+  protected _applyPostValidation(value: unknown, ctx: ValidatorContext): ValidationResult {
+    const errors: string[] = [];
+    for (const { fn, message } of this._customValidators) {
+      const result = fn(value as T);
+      if (result === false) errors.push(message);
+      else if (typeof result === 'string') errors.push(result);
+    }
+    for (const { fn, message } of this._refines) {
+      if (!fn(value as T)) errors.push(message);
+    }
+    if (errors.length > 0) return { valid: false, errors: [{ field: ctx.field, messages: errors }], data: null };
 
-    if (value === undefined || value === null) {
-      if (this._nullable && value === null) {
-        return { valid: true, errors: [], data: null };
-      }
+    let outputValue: unknown = value;
+    for (const transform of this._transforms) {
+      outputValue = transform(outputValue);
+    }
+    return { valid: true, errors: [], data: outputValue };
+  }
+
+  protected _preprocessValue(value: T): T {
+    return value;
+  }
+
+  validate(value: unknown, ctx: ValidatorContext = { field: 'root', path: [] }): ValidationResult {
+    if (value === null) {
+      if (this._nullable) return { valid: true, errors: [], data: null };
+      return {
+        valid: false,
+        errors: [{ field: ctx.field, messages: [`${ctx.field} cannot be null`] }],
+        data: null,
+      };
+    }
+
+    if (value === undefined) {
       if (this._hasDefault) {
         value = this._defaultValue;
       } else if (this._optional) {
@@ -66,29 +93,14 @@ export abstract class BaseValidator<T, TOut = T> {
       return { valid: false, errors: [{ field: ctx.field, messages: typeErrors }], data: null };
     }
 
-    const ruleErrors = this._validateRules(value as T, ctx);
-
-    for (const { fn, message } of this._customValidators) {
-      const result = fn(value as T);
-      if (result === false) ruleErrors.push(message);
-      else if (typeof result === 'string') ruleErrors.push(result);
-    }
-
-    for (const { fn, message } of this._refines) {
-      if (!fn(value as T)) ruleErrors.push(message);
-    }
+    const processed = this._preprocessValue(value as T);
+    const ruleErrors = this._validateRules(processed, ctx);
 
     if (ruleErrors.length > 0) {
-      errors.push({ field: ctx.field, messages: ruleErrors });
-      return { valid: false, errors, data: null };
+      return { valid: false, errors: [{ field: ctx.field, messages: ruleErrors }], data: null };
     }
 
-    let outputValue: unknown = value;
-    for (const transform of this._transforms) {
-      outputValue = transform(outputValue);
-    }
-
-    return { valid: true, errors: [], data: outputValue };
+    return this._applyPostValidation(processed, ctx);
   }
 
   protected abstract _validateType(value: unknown, ctx: ValidatorContext): string[];

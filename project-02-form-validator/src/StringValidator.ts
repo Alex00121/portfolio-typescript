@@ -48,9 +48,12 @@ export class StringValidator extends BaseValidator<string> {
     return [];
   }
 
+  protected _preprocessValue(value: string): string {
+    return this._trim ? value.trim() : value;
+  }
+
   protected _validateRules(value: string, ctx: ValidatorContext): string[] {
     const errors: string[] = [];
-    if (this._trim) value = value.trim();
     if (this._min !== undefined && value.length < this._min)
       errors.push(`${ctx.field} must be at least ${this._min} characters`);
     if (this._max !== undefined && value.length > this._max)
