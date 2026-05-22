@@ -1,0 +1,30 @@
+{
+  "name": "cli-todo",
+  "version": "1.0.0",
+  "description": "CLI Todo manager with TypeScript, chalk, and inquirer",
+  "main": "dist/index.js",
+  "bin": {
+    "todo": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "chalk": "4.1.2",
+    "cli-table3": "^0.6.3",
+    "commander": "^11.1.0",
+    "figlet": "^1.7.0",
+    "inquirer": "8.2.6",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/figlet": "^1.5.8",
+    "@types/inquirer": "^8.2.10",
+    "@types/node": "^20.11.0",
+    "@types/uuid": "^9.0.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
